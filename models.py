@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 from database import Base
 
 
@@ -8,6 +9,8 @@ class Questions(Base):
     id = Column(Integer, primary_key=True, index=True)
     question_text = Column(String, index=True)
 
+    choices = relationship("Choices", back_populates="questions")
+
 
 class Choices(Base):
     __tablename__ = "choices"
@@ -16,3 +19,5 @@ class Choices(Base):
     choice_text = Column(String, index=True)
     is_correct = Column(Boolean, default=True)
     question_id = Column(Integer, ForeignKey("questions.id"))
+
+    questions = relationship("Questions", back_populates="choices")

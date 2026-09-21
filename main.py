@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Annotated
 import models
 from database import engine, SessionLocal
@@ -17,6 +17,22 @@ class ChoiceBase(BaseModel):
 class QuestionBase(BaseModel):
     question_text: str
     choices: List[ChoiceBase]
+
+
+class ChoiceResponse(BaseModel):
+    id: int
+    choice_text: str
+    is_correct: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QuestionResponse(BaseModel):
+    id: int
+    question_text: str
+    choices: List[ChoiceResponse]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 def get_db():
@@ -41,3 +57,12 @@ async def create_questions(question: QuestionBase, db: db_dependency):
             choice_text=choice.choice_text, is_correct=choice.is_correct, question_id=db_question.id)
         db.add(db_choice)
     db.commit()
+
+
+@app.get("/questions/{question_id}", response_model=QuestionResponse)
+async def read_questions(question_id: int, db: db_dependency):
+    result = db.query(models.Questions).filter(
+        models.Questions.id == question_id).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return result
